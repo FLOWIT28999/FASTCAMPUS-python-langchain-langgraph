@@ -1,0 +1,20 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# 클로드 코드 생략
+.claude
+
+# API 키 및 환경변수
+.env
+
+# 벡터 데이터베이스
+chroma_db/
+rag_db/
