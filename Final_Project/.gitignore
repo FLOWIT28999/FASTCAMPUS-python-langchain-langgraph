@@ -1,0 +1,25 @@
+# 환경 변수 / 시크릿
+.env
+
+# 가상환경
+.venv
+
+# Claude Code
+.claude
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+wheels/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
