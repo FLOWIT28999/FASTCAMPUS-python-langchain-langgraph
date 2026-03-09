@@ -13,6 +13,7 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+wheels/
 
 # OS
 .DS_Store
