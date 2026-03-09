@@ -1,0 +1,2151 @@
+{
+  "name": "프로젝트 3(n8n): 실시간 글로벌 시장 분석 및 경쟁사 리서치 에이전트",
+  "nodes": [
+    {
+      "parameters": {
+        "trigger": [
+          "app_mention"
+        ],
+        "channelId": {
+          "__rl": true,
+          "value": "C0AG8KUAL73",
+          "mode": "list",
+          "cachedResultName": "경쟁사-분석"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.slackTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        304
+      ],
+      "id": "e28c81f6-59dc-442e-b164-4635f7579f8a",
+      "name": "Slack Trigger",
+      "webhookId": "92b1848b-17be-4488-86c8-a288d2ee4540",
+      "credentials": {
+        "slackApi": {
+          "id": "hfVY3nrzF9xGtRNq",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cfc85019-5ce9-460b-bba7-a605258ca712",
+              "name": "company_url",
+              "value": "={{ $('Slack Trigger').first().json.text.replace(/<@[^>]+>/g, \"\").replace(/[<>]/g, \"\").trim() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        304
+      ],
+      "id": "80d52069-2b5e-47c1-a1a5-32a60a402fe6",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.exa.ai/findSimilar",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "url",
+              "value": "={{ $json.company_url }}"
+            },
+            {
+              "name": "type",
+              "value": "neural"
+            },
+            {
+              "name": "useAutoprompt",
+              "value": "true"
+            },
+            {
+              "name": "contents",
+              "value": "={{ { \"text\": false } }}"
+            },
+            {
+              "name": "excludeDomains",
+              "value": "={{ [$json.company_url, \"github.com\", \"linkedIn.com\"] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        416,
+        304
+      ],
+      "id": "e1e7a92c-aef3-4030-a908-e5871beb0201",
+      "name": "Exa.ai_경쟁사_탐색"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "results",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        624,
+        304
+      ],
+      "id": "9fdc468f-eedc-482b-bf46-b3d9e14e38a7",
+      "name": "경쟁사_나누기"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "aeee33d7-4262-47ad-8956-b491ed9c5988",
+              "name": "title",
+              "value": "={{ $json.title }}",
+              "type": "string"
+            },
+            {
+              "id": "645206f6-71fb-45ef-9396-497a3c2b41e0",
+              "name": "url",
+              "value": "={{ $json.url }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        832,
+        304
+      ],
+      "id": "de16e399-433c-4cba-a8cf-dc5c10803713",
+      "name": "도메인_추출"
+    },
+    {
+      "parameters": {
+        "compare": "selectedFields",
+        "fieldsToCompare": "url",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 2,
+      "position": [
+        1088,
+        304
+      ],
+      "id": "7a585535-1af5-45b3-90f6-c1cc6f8bcd62",
+      "name": "중복_제거"
+    },
+    {
+      "parameters": {
+        "maxItems": 3
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        1296,
+        304
+      ],
+      "id": "db9f3be2-067f-4981-a5ab-edc92b0a0b3b",
+      "name": "Limit"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        48,
+        544
+      ],
+      "id": "d9fc8a4f-8cea-4470-b2ef-a85aa062cbc4",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f458a440-2303-4077-9098-e2b7b97cfeb4",
+              "name": "URL",
+              "value": "={{ $json.url }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        224,
+        912
+      ],
+      "id": "1c682dcf-ee95-412a-b6ce-04d2f88e38ac",
+      "name": "URL"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        160,
+        1136
+      ],
+      "id": "c9208d2f-2e6b-4d17-b5b6-3752f5598c5f",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "9EP7DDryiMQXeJRS",
+          "name": "Google Gemini(PaLM) Api account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.URL }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "당신은 전 세계 및 한국 기업을 조사하는 전문 리서치 에이전트입니다.\n사용자가 기업명을 제공하면, 연결된 'Perplexity_finder' 반드시 도구를 사용하여 최신 정보를 수집하고 구조화된 리포트를 작성하는 것이 당신의 임무입니다.\n\n## 핵심 임무\n연결된 'Perplexity_finder'도구를 반드시 호출하여 다음 데이터를 반드시 포함하는 보고서를 작성하세요:\n1. 기본 정보: 설립일, 설립자, CEO, 본사 위치\n2. 투자/재무: 총 투자액, 최근 투자 단계, 연 매출(최신 공시 기준), 영업이익\n3. 팀/기술: 직원 수, 핵심 인력 구성, 현재 채용 직무, 주요 기술 스택\n4. 시장 지표: 주요 고객사, 서비스 활성 사용자(MAU/DAU) - 한국 기업은 혁신의숲 데이터 참조\n5. 최신 동향: 최근 6개월 내 주요 뉴스 기사 3건 요약\n\n## 조사 가이드라인\n- 한국 기업일 경우: '더브이씨(THE VC)', '혁신의숲', 'DART(전자공시)', '네이버 뉴스' 데이터를 우선적으로 요청하세요.\n- 글로벌 기업일 경우: 'Crunchbase', 'LinkedIn', 'Wellfound', 'TechCrunch' 데이터를 요청하세요.\n- 'Perplexity_finder', 'Tavily_finder' 호출 시, 가능한 구체적인 질문을 던져 정확한 수치를 얻어내야 합니다.\n\n## 출력 주의사항\n- 모든 데이터는 최종적으로 JSON 형식으로 정리되어야 합니다.\n- 찾을 수 없는 데이터는 'null' 대신 빈 배열([]), 빈 객체({}), 또는 빈 문자열(\"\")을 사용하세요.\n- 데이터의 출처(Source URL)가 있다면 반드시 함께 기록하세요."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        432,
+        912
+      ],
+      "id": "461104ef-ac04-472c-bd55-456fd3b8f275",
+      "name": "기업_분석_에이전트"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"analysis_target\": {\n    \"name\": \"기업명\",\n    \"domain\": \"공식 홈페이지 주소\",\n    \"region\": \"KR 또는 Global\"\n  },\n  \"corporate_identity\": {\n    \"year_founded\": \"설립 연도\",\n    \"legal_entity_type\": \"법인 유형(상장/비상장/외감 등)\",\n    \"hq_location\": \"본사 소재지\",\n    \"founders\": [{ \"name\": \"이름\", \"profile_url\": \"링크\" }],\n    \"current_ceo\": { \"name\": \"이름\", \"profile_url\": \"링크\" }\n  },\n  \"financial_performance\": {\n    \"last_funding_round\": \"최근 투자 단계\",\n    \"total_funding_amount\": \"총 투자 유치 금액(통화 단위 포함)\",\n    \"annual_revenue_latest\": \"최근 연 매출액\",\n    \"operating_profit_latest\": \"최근 영업이익\",\n    \"valuation\": \"기업 가치(추정치 포함)\"\n  },\n  \"operational_metrics\": {\n    \"employee_count\": \"현재 직원 수\",\n    \"recruitment_status\": \"현재 채용 중인 주요 포지션 수\",\n    \"core_technologies\": [\"사용 중인 주요 기술 스택\"],\n    \"major_customers\": [\"주요 B2B 고객사 또는 타겟 고객\"]\n  },\n  \"market_intelligence\": {\n    \"latest_news\": [{ \"title\": \"제목\", \"link\": \"URL\", \"date\": \"날짜\" }],\n    \"sources\": [\"데이터를 추출한 소스 URL 리스트\"]\n  }\n}",
+        "autoFix": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        592,
+        1120
+      ],
+      "id": "d9534b00-a10a-424d-8027-139ff1969392",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "query": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Query', `검색할 기업명 또는 구체적인 질문 (예: 'Kakao 2026 annual revenue site:dart.fss.or.kr')`, 'string') }}",
+        "options": {}
+      },
+      "type": "@tavily/n8n-nodes-tavily.tavilyTool",
+      "typeVersion": 1,
+      "position": [
+        288,
+        1184
+      ],
+      "id": "29464bc2-7fc7-4a7d-9d38-58f4a3dc628a",
+      "name": "Tavily_finder",
+      "credentials": {
+        "tavilyApi": {
+          "id": "wtKORwvpYCXrAMl2",
+          "name": "Tavily account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        864,
+        1040
+      ],
+      "id": "9f43bb21-3eaa-4d07-b83c-2cdbcb112b42",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "9EP7DDryiMQXeJRS",
+          "name": "Google Gemini(PaLM) Api account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"features\": [{ \"name\": \"\", \"description\": \"\" }],\n  \"pricing_plans\": [\n    { \n      \"name\": \"플랜명\", \n      \"tier\": \"Basic/Mid/High\", \n      \"price\": \"가격(단위 포함)\", \n      \"billing_cycle\": \"Monthly/Annually\",\n      \"key_features\": [\"주요 포함 기능\"]\n    }\n  ],\n  \"price_determinants\": [{ \"factor\": \"가격 결정 요인\", \"description\": \"\" }],\n  \"promotions\": {\n    \"discounts\": \"현재 진행 중인 할인\",\n    \"free_trial\": { \"available\": false, \"duration\": \"\", \"condition\": \"\" },\n    \"freemium\": { \"available\": false, \"details\": \"\" }\n  },\n  \"custom_enterprise_plan\": { \"available\": false, \"contact_required\": true, \"description\": \"\" },\n  \"complementary_tools\": [{ \"name\": \"\", \"description\": \"\" }],\n  \"technology_stack\": [{ \"name\": \"\", \"purpose\": \"\" }],\n  \"sources\": [\"출처 URL 리스트\"]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1168,
+        1120
+      ],
+      "id": "04f5de1c-3f97-4623-922a-99ab3abab0c2",
+      "name": "Structured Output Parser1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('URL').item.json.URL }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "당신은 기업의 제품 및 서비스 오퍼링 전문 분석가입니다. \n귀하의 목표는 특정 기업의 제품 기능, 가격 구조, 기술 스택을 상세히 조사하여 보고하는 것입니다.\n\n## 조사 항목\n* 주요 기능 세트 (Feature sets)\n* 요금제 플랜 수 및 단계 (Pricing plans)\n* 가격에 영향을 미치는 요소 (사용자 수, 데이터 용량 등)\n* 등급별 가격 (최저가, 중간 단계, 최고가)\n* 커스텀/엔터프라이즈 플랜 존재 여부\n* 현재 제공 중인 할인 및 프로모션\n* 무료 체험(Free Trial) 및 프리미엄(Freemium) 버전 상세 정보\n* 함께 제공되는 보조 도구 및 에코시스템\n* 제품 구현에 사용된 주요 기술 스택\n\n## 실행 단계\n1. 연결된 'Perplexity_product' 반드시 도구를 사용하여 해당 기업의 공식 웹사이트, 가격 페이지, 리뷰 사이트를 통합 검색하세요.\n2. 한국 기업일 경우, 국내 블로그나 뉴스, IT 커뮤니티의 실시간 정보를 참조하여 원화(KRW) 기준 가격을 우선적으로 수집하세요.\n3. 수집된 정보를 바탕으로 구조화된 결과를 반환하세요.\n\n## 주의 사항\n* 데이터를 찾을 수 없는 경우 'null'을 사용하지 말고, 스키마에 따라 빈 배열([]), 빈 객체({}), 또는 빈 문자열(\"\")을 반환하세요.\n* 가격 단위(USD, KRW 등)를 반드시 명시하세요."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        864,
+        912
+      ],
+      "id": "e0f376c7-87f0-4a38-b683-b938e4a4348c",
+      "name": "기업_제품_오퍼링_에이전트"
+    },
+    {
+      "parameters": {
+        "query": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Query', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "@tavily/n8n-nodes-tavily.tavilyTool",
+      "typeVersion": 1,
+      "position": [
+        1056,
+        1344
+      ],
+      "id": "521e4da9-88b0-48b1-ad23-93a5483e9ceb",
+      "name": "Tavily_product",
+      "credentials": {
+        "tavilyApi": {
+          "id": "wtKORwvpYCXrAMl2",
+          "name": "Tavily account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1328,
+        1120
+      ],
+      "id": "959aa6b7-30e1-4983-a12f-6e95a296ec54",
+      "name": "Google Gemini Chat Model2",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "9EP7DDryiMQXeJRS",
+          "name": "Google Gemini(PaLM) Api account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"review_summary\": {\n    \"total_reviews_estimated\": 0,\n    \"average_rating\": \"\",\n    \"positive_sentiment_percent\": \"\",\n    \"negative_sentiment_percent\": \"\"\n  },\n  \"top_pros\": [\"가장 많이 언급된 장점 리스트\"],\n  \"top_cons\": [\"가장 많이 언급된 단점 리스트\"],\n  \"demographics\": {\n    \"top_countries\": [\"\"],\n    \"main_user_segments\": [\"주요 사용자층 예: 개발자, 30대 여성 등\"]\n  },\n  \"active_platforms\": [\"여론이 가장 활발한 플랫폼 리스트\"],\n  \"notable_feedbacks\": [\n    {\n      \"issue\": \"핵심 이슈\",\n      \"sentiment\": \"Positive/Negative\",\n      \"context\": \"상세 설명\"\n    }\n  ],\n  \"sources\": [\"출처 URL 리스트\"]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1632,
+        1120
+      ],
+      "id": "b8c41d8e-ee44-4769-a9fd-aa031b31e584",
+      "name": "Structured Output Parser2"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('URL').item.json.URL }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "당신은 기업 및 제품 평판 분석 전문가입니다. \n당신의 목표는 온라인상에 존재하는 고객 리뷰를 수집하여 긍정/부정 비율 및 핵심 피드백을 분석하는 것입니다.\n\n## 조사 항목\n* 전체 리뷰 수 및 평균 평점\n* 긍정적 언급 비율 (%) 및 주요 장점 (Top Pros)\n* 부정적 언급 비율 (%) 및 주요 단점 (Top Cons)\n* 주요 사용자층의 국가 및 지역\n* 해당 기업/제품이 가장 많이 언급되는 소셜 미디어 및 커뮤니티 플랫폼\n* 실제 사용자의 핵심 불만 사항 및 개선 요구 사항\n\n## 실행 단계\n1. 연결된 'Perplexity_evaluator' 도구를 반드시 사용하여 글로벌 리뷰 사이트(Trustpilot, G2, Product Hunt) 및 한국 특화 사이트(잡플래닛, 블라인드, 클리앙, 뽐뿌 등)를 검색하세요.\n2. 한국 기업이나 제품의 경우, 국내 포털 리뷰와 IT 커뮤니티의 최근 여론을 반드시 반영하세요.\n3. 단순한 텍스트 나열이 아닌, 전체적인 평판의 흐름을 파악하여 구조화된 데이터를 반환하세요.\n\n## 주의 사항\n* 데이터를 찾을 수 없는 경우 빈 배열([]), 빈 객체({}), 또는 빈 문자열(\"\")을 반환하세요.\n* 특정 리뷰의 신뢰도가 낮거나 광고성 글로 판단될 경우 분석에서 제외하세요."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1344,
+        912
+      ],
+      "id": "0d01e835-fa6b-463b-bb83-d81a16b57805",
+      "name": "제품_평가_에이전트"
+    },
+    {
+      "parameters": {
+        "query": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Query', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "@tavily/n8n-nodes-tavily.tavilyTool",
+      "typeVersion": 1,
+      "position": [
+        1472,
+        1360
+      ],
+      "id": "21e13091-9ff5-4011-99ad-5c709d072d0b",
+      "name": "Tavily_evaluator",
+      "credentials": {
+        "tavilyApi": {
+          "id": "wtKORwvpYCXrAMl2",
+          "name": "Tavily account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 2
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1840,
+        1072
+      ],
+      "id": "779d6355-2de6-4418-8b23-1d647daea20f",
+      "name": "Wait",
+      "webhookId": "eeeb717b-7346-44a6-a260-117890d5c38c"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        352,
+        528
+      ],
+      "id": "6f867a7f-85c3-432d-b6a6-de418a66cfc4",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        592,
+        1264
+      ],
+      "id": "094fc504-fa30-4823-9773-7d352ad62307",
+      "name": "Google Gemini Chat Model3",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "9EP7DDryiMQXeJRS",
+          "name": "Google Gemini(PaLM) Api account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        864,
+        768
+      ],
+      "id": "a1a9ba5a-63b8-4dbb-a6bb-dcb80ccc0321",
+      "name": "Google Gemini Chat Model4",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "9EP7DDryiMQXeJRS",
+          "name": "Google Gemini(PaLM) Api account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=기업명 : 대모산개발단 경쟁업체 \n분석 날짜 : {{$now.format('yyyy-MM-dd')}}\n---\n{{ JSON.stringify($json.data) }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        624,
+        576
+      ],
+      "id": "f13ec267-1b45-4f23-9c83-5ac9408ce19c",
+      "name": "최종_보고서"
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.output }}",
+        "attributes": {
+          "attributes": [
+            {
+              "name": "HTML_Content",
+              "description": "Generate a complete HTML structure including visualization elements like bar charts or progress bars using inline styles for width percentages based on the data. Use semantic tags (header, section, table) for a professional business report layout.",
+              "required": true
+            },
+            {
+              "name": "CSS_Content",
+              "description": "Provide modern, clean CSS for a professional PDF report. Include @import for 'Nanum Gothic' from Google Fonts, and define styles for typography, tables, and visualization components (e.g., bar-bg, bar-fill). Ensure high readability for A4 printing.",
+              "required": true
+            }
+          ]
+        },
+        "options": {
+          "systemPromptTemplate": "You are an expert extraction algorithm.\nOnly extract relevant information from the text.\nIf you do not know the value of an attribute asked to extract, you may omit the attribute's value.\n---\n당신은 비즈니스 리포트 데이터 추출 전문가입니다. \n당신의 임무는 입력된 텍스트에서 PDFMunk 렌더링에 필요한 HTML_Content와 CSS_Content를 정교하게 추출하는 것입니다.\n\n## 추출 지침:\n1. HTML_Content: \n   - 텍스트 본문에서 실제 시각화 구조와 데이터가 포함된 <html> 태그 내부 혹은 전체 HTML 코드를 추출하세요.\n   - 막대 그래프, 표, 텍스트 레이아웃이 포함된 완성된 구조여야 합니다.\n   \n2. CSS_Content:\n   - 보고서의 디자인을 결정하는 모든 CSS 스타일 코드를 추출하세요.\n   - 구글 폰트(@import)와 전문적인 비즈니스 스타일이 포함되어야 합니다.\n\n## 데이터 정제 규칙:\n- 마크다운 코드 블록(```html, ```css)이 포함되어 있다면, 기호는 제외하고 순수 코드 내용만 추출하세요.\n- 각 필드의 값은 PDFMunk API가 즉시 렌더링할 수 있는 완전한 형태의 문자열이어야 합니다.\n- 입력 데이터에 누락된 정보가 있더라도 구조적 틀(Layout)은 유지한 채 결과물을 생성하세요."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.2,
+      "position": [
+        976,
+        576
+      ],
+      "id": "8204deb1-5c76-4de3-94b5-61a35abfeb2d",
+      "name": "렌더링"
+    },
+    {
+      "parameters": {
+        "html_content": "={{ $json.output.HTML_Content }}",
+        "css_content": "={{ $json.output.CSS_Content }}"
+      },
+      "type": "n8n-nodes-htmlcsstopdf.htmlcsstopdf",
+      "typeVersion": 1,
+      "position": [
+        1328,
+        576
+      ],
+      "id": "f63d8d60-a5e0-442b-83c8-c06c6e800e09",
+      "name": "Convert HTML to PDF",
+      "credentials": {
+        "htmlcsstopdfApi": {
+          "id": "NaMwfetYiFokZft9",
+          "name": "HTML to PDF account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0AG8KUAL73",
+          "mode": "list",
+          "cachedResultName": "경쟁사-분석"
+        },
+        "text": "={{ $json.pdf_url }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        1536,
+        576
+      ],
+      "id": "879a344c-af99-4aba-93e2-c277b3c02a32",
+      "name": "Send a message",
+      "webhookId": "65211c5b-76b7-4195-94e4-7b721929850e",
+      "credentials": {
+        "slackApi": {
+          "id": "hfVY3nrzF9xGtRNq",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "trigger": [
+          "app_mention"
+        ],
+        "channelId": {
+          "__rl": true,
+          "value": "C0AG8KUAL73",
+          "mode": "list",
+          "cachedResultName": "경쟁사-분석"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.slackTrigger",
+      "typeVersion": 1,
+      "position": [
+        848,
+        2368
+      ],
+      "id": "507a0528-48d5-4fd0-92ea-4a39b15b4128",
+      "name": "Slack Trigger1",
+      "webhookId": "92b1848b-17be-4488-86c8-a288d2ee4540",
+      "credentials": {
+        "slackApi": {
+          "id": "hfVY3nrzF9xGtRNq",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cfc85019-5ce9-460b-bba7-a605258ca712",
+              "name": "company_url",
+              "value": "={{ $('Slack Trigger1').first().json.text.replace(/<@[^>]+>/g, \"\").replace(/[<>]/g, \"\").trim() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1056,
+        2368
+      ],
+      "id": "aea5f048-c273-483a-839a-981583dde8a6",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.exa.ai/findSimilar",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "f60fff1b-0b99-4098-9abd-1ebd31c31c42"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "url",
+              "value": "={{ $json.company_url }}"
+            },
+            {
+              "name": "type",
+              "value": "neural"
+            },
+            {
+              "name": "useAutoprompt",
+              "value": "true"
+            },
+            {
+              "name": "contents",
+              "value": "={{ { \"text\": false } }}"
+            },
+            {
+              "name": "excludeDomains",
+              "value": "={{ [$json.company_url, \"github.com\", \"linkedIn.com\"] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1264,
+        2368
+      ],
+      "id": "96ffac50-c25d-4b78-b9fa-11c068fd99fc",
+      "name": "Exa.ai_경쟁사_탐색1"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "results",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1472,
+        2368
+      ],
+      "id": "33361415-240c-45a3-bc62-a46ded232b84",
+      "name": "경쟁사_나누기1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "aeee33d7-4262-47ad-8956-b491ed9c5988",
+              "name": "title",
+              "value": "={{ $json.title }}",
+              "type": "string"
+            },
+            {
+              "id": "645206f6-71fb-45ef-9396-497a3c2b41e0",
+              "name": "url",
+              "value": "={{ $json.url }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1680,
+        2368
+      ],
+      "id": "0de169fe-52c1-47bd-bab6-1ef3f9064ce9",
+      "name": "도메인_추출1"
+    },
+    {
+      "parameters": {
+        "compare": "selectedFields",
+        "fieldsToCompare": "url",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 2,
+      "position": [
+        1936,
+        2368
+      ],
+      "id": "f14e47bd-3fd0-48a4-b140-91f88f8165f7",
+      "name": "중복_제거1"
+    },
+    {
+      "parameters": {
+        "maxItems": 3
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        2144,
+        2368
+      ],
+      "id": "c38e4bbe-cffd-4e20-a572-180dcc203d7b",
+      "name": "Limit1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        896,
+        2608
+      ],
+      "id": "dd3360d6-517f-4f08-b8c8-b24a6672b5a5",
+      "name": "Loop Over Items1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f458a440-2303-4077-9098-e2b7b97cfeb4",
+              "name": "URL",
+              "value": "={{ $json.url }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1072,
+        2976
+      ],
+      "id": "b154fa30-a370-47ba-991e-36fa1fcec5e3",
+      "name": "URL1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1008,
+        3200
+      ],
+      "id": "9beeebc3-09f2-4782-bb21-f74a5fda2307",
+      "name": "Google Gemini Chat Model5",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "9EP7DDryiMQXeJRS",
+          "name": "Google Gemini(PaLM) Api account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.URL }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "당신은 전 세계 및 한국 기업을 조사하는 전문 리서치 에이전트입니다.\n사용자가 기업명을 제공하면, 연결된 'Perplexity_finder', 'Tavily_finder' 도구를 사용하여 최신 정보를 수집하고 구조화된 리포트를 작성하는 것이 당신의 임무입니다.\n\n## 핵심 임무\n연결된 'Perplexity_finder', 'Tavily_finder' 도구를 호출하여 다음 데이터를 반드시 포함하는 보고서를 작성하세요:\n1. 기본 정보: 설립일, 설립자, CEO, 본사 위치\n2. 투자/재무: 총 투자액, 최근 투자 단계, 연 매출(최신 공시 기준), 영업이익\n3. 팀/기술: 직원 수, 핵심 인력 구성, 현재 채용 직무, 주요 기술 스택\n4. 시장 지표: 주요 고객사, 서비스 활성 사용자(MAU/DAU) - 한국 기업은 혁신의숲 데이터 참조\n5. 최신 동향: 최근 6개월 내 주요 뉴스 기사 3건 요약\n\n## 조사 가이드라인\n- 한국 기업일 경우: '더브이씨(THE VC)', '혁신의숲', 'DART(전자공시)', '네이버 뉴스' 데이터를 우선적으로 요청하세요.\n- 글로벌 기업일 경우: 'Crunchbase', 'LinkedIn', 'Wellfound', 'TechCrunch' 데이터를 요청하세요.\n- 'Perplexity_finder', 'Tavily_finder' 호출 시, 가능한 구체적인 질문을 던져 정확한 수치를 얻어내야 합니다.\n\n## 출력 주의사항\n- 모든 데이터는 최종적으로 JSON 형식으로 정리되어야 합니다.\n- 찾을 수 없는 데이터는 'null' 대신 빈 배열([]), 빈 객체({}), 또는 빈 문자열(\"\")을 사용하세요.\n- 데이터의 출처(Source URL)가 있다면 반드시 함께 기록하세요."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1280,
+        2976
+      ],
+      "id": "bc1ce07d-e5f3-44da-8b47-e2d4d2b9f41a",
+      "name": "기업_분석_에이전트1"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"analysis_target\": {\n    \"name\": \"기업명\",\n    \"domain\": \"공식 홈페이지 주소\",\n    \"region\": \"KR 또는 Global\"\n  },\n  \"corporate_identity\": {\n    \"year_founded\": \"설립 연도\",\n    \"legal_entity_type\": \"법인 유형(상장/비상장/외감 등)\",\n    \"hq_location\": \"본사 소재지\",\n    \"founders\": [{ \"name\": \"이름\", \"profile_url\": \"링크\" }],\n    \"current_ceo\": { \"name\": \"이름\", \"profile_url\": \"링크\" }\n  },\n  \"financial_performance\": {\n    \"last_funding_round\": \"최근 투자 단계\",\n    \"total_funding_amount\": \"총 투자 유치 금액(통화 단위 포함)\",\n    \"annual_revenue_latest\": \"최근 연 매출액\",\n    \"operating_profit_latest\": \"최근 영업이익\",\n    \"valuation\": \"기업 가치(추정치 포함)\"\n  },\n  \"operational_metrics\": {\n    \"employee_count\": \"현재 직원 수\",\n    \"recruitment_status\": \"현재 채용 중인 주요 포지션 수\",\n    \"core_technologies\": [\"사용 중인 주요 기술 스택\"],\n    \"major_customers\": [\"주요 B2B 고객사 또는 타겟 고객\"]\n  },\n  \"market_intelligence\": {\n    \"latest_news\": [{ \"title\": \"제목\", \"link\": \"URL\", \"date\": \"날짜\" }],\n    \"sources\": [\"데이터를 추출한 소스 URL 리스트\"]\n  }\n}",
+        "autoFix": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1440,
+        3184
+      ],
+      "id": "55ab85ef-e095-4eae-9869-af93c1980428",
+      "name": "Structured Output Parser3"
+    },
+    {
+      "parameters": {
+        "query": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Query', `검색할 기업명 또는 구체적인 질문 (예: 'Kakao 2026 annual revenue site:dart.fss.or.kr')`, 'string') }}",
+        "options": {}
+      },
+      "type": "@tavily/n8n-nodes-tavily.tavilyTool",
+      "typeVersion": 1,
+      "position": [
+        1152,
+        3200
+      ],
+      "id": "4520009f-8c7b-4ad8-8802-5bb5ac9229bb",
+      "name": "Tavily_finder1",
+      "credentials": {
+        "tavilyApi": {
+          "id": "wtKORwvpYCXrAMl2",
+          "name": "Tavily account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1712,
+        3104
+      ],
+      "id": "023e8fca-91c5-4a76-9866-2f64386c34b7",
+      "name": "Google Gemini Chat Model6",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "9EP7DDryiMQXeJRS",
+          "name": "Google Gemini(PaLM) Api account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"features\": [{ \"name\": \"\", \"description\": \"\" }],\n  \"pricing_plans\": [\n    { \n      \"name\": \"플랜명\", \n      \"tier\": \"Basic/Mid/High\", \n      \"price\": \"가격(단위 포함)\", \n      \"billing_cycle\": \"Monthly/Annually\",\n      \"key_features\": [\"주요 포함 기능\"]\n    }\n  ],\n  \"price_determinants\": [{ \"factor\": \"가격 결정 요인\", \"description\": \"\" }],\n  \"promotions\": {\n    \"discounts\": \"현재 진행 중인 할인\",\n    \"free_trial\": { \"available\": false, \"duration\": \"\", \"condition\": \"\" },\n    \"freemium\": { \"available\": false, \"details\": \"\" }\n  },\n  \"custom_enterprise_plan\": { \"available\": false, \"contact_required\": true, \"description\": \"\" },\n  \"complementary_tools\": [{ \"name\": \"\", \"description\": \"\" }],\n  \"technology_stack\": [{ \"name\": \"\", \"purpose\": \"\" }],\n  \"sources\": [\"출처 URL 리스트\"]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        2016,
+        3184
+      ],
+      "id": "79010d9e-a325-430c-a9fb-8a8916343fc8",
+      "name": "Structured Output Parser4"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('URL1').item.json.URL }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "당신은 기업의 제품 및 서비스 오퍼링 전문 분석가입니다. \n귀하의 목표는 특정 기업의 제품 기능, 가격 구조, 기술 스택을 상세히 조사하여 보고하는 것입니다.\n\n## 조사 항목\n* 주요 기능 세트 (Feature sets)\n* 요금제 플랜 수 및 단계 (Pricing plans)\n* 가격에 영향을 미치는 요소 (사용자 수, 데이터 용량 등)\n* 등급별 가격 (최저가, 중간 단계, 최고가)\n* 커스텀/엔터프라이즈 플랜 존재 여부\n* 현재 제공 중인 할인 및 프로모션\n* 무료 체험(Free Trial) 및 프리미엄(Freemium) 버전 상세 정보\n* 함께 제공되는 보조 도구 및 에코시스템\n* 제품 구현에 사용된 주요 기술 스택\n\n## 실행 단계\n1. 연결된 'Perplexity_product', 'Tavily_product' 도구를 사용하여 해당 기업의 공식 웹사이트, 가격 페이지, 리뷰 사이트를 통합 검색하세요.\n2. 한국 기업일 경우, 국내 블로그나 뉴스, IT 커뮤니티의 실시간 정보를 참조하여 원화(KRW) 기준 가격을 우선적으로 수집하세요.\n3. 수집된 정보를 바탕으로 구조화된 결과를 반환하세요.\n\n## 주의 사항\n* 데이터를 찾을 수 없는 경우 'null'을 사용하지 말고, 스키마에 따라 빈 배열([]), 빈 객체({}), 또는 빈 문자열(\"\")을 반환하세요.\n* 가격 단위(USD, KRW 등)를 반드시 명시하세요."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1712,
+        2976
+      ],
+      "id": "a013d9ce-3a28-451e-8547-928d85ae4a89",
+      "name": "기업_제품_오퍼링_에이전트1"
+    },
+    {
+      "parameters": {
+        "query": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Query', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "@tavily/n8n-nodes-tavily.tavilyTool",
+      "typeVersion": 1,
+      "position": [
+        1920,
+        3152
+      ],
+      "id": "52ebb12e-031f-4b2f-9de3-2bc21e34cbb1",
+      "name": "Tavily_product1",
+      "credentials": {
+        "tavilyApi": {
+          "id": "wtKORwvpYCXrAMl2",
+          "name": "Tavily account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        2176,
+        3184
+      ],
+      "id": "490616a8-f429-4efe-8557-f80b20cd2e37",
+      "name": "Google Gemini Chat Model7",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "9EP7DDryiMQXeJRS",
+          "name": "Google Gemini(PaLM) Api account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"review_summary\": {\n    \"total_reviews_estimated\": 0,\n    \"average_rating\": \"\",\n    \"positive_sentiment_percent\": \"\",\n    \"negative_sentiment_percent\": \"\"\n  },\n  \"top_pros\": [\"가장 많이 언급된 장점 리스트\"],\n  \"top_cons\": [\"가장 많이 언급된 단점 리스트\"],\n  \"demographics\": {\n    \"top_countries\": [\"\"],\n    \"main_user_segments\": [\"주요 사용자층 예: 개발자, 30대 여성 등\"]\n  },\n  \"active_platforms\": [\"여론이 가장 활발한 플랫폼 리스트\"],\n  \"notable_feedbacks\": [\n    {\n      \"issue\": \"핵심 이슈\",\n      \"sentiment\": \"Positive/Negative\",\n      \"context\": \"상세 설명\"\n    }\n  ],\n  \"sources\": [\"출처 URL 리스트\"]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        2480,
+        3184
+      ],
+      "id": "da6a2e7b-b69e-4915-81f1-8dfa1470ad4c",
+      "name": "Structured Output Parser5"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('URL1').item.json.URL }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "당신은 기업 및 제품 평판 분석 전문가입니다. \n당신의 목표는 온라인상에 존재하는 고객 리뷰를 수집하여 긍정/부정 비율 및 핵심 피드백을 분석하는 것입니다.\n\n## 조사 항목\n* 전체 리뷰 수 및 평균 평점\n* 긍정적 언급 비율 (%) 및 주요 장점 (Top Pros)\n* 부정적 언급 비율 (%) 및 주요 단점 (Top Cons)\n* 주요 사용자층의 국가 및 지역\n* 해당 기업/제품이 가장 많이 언급되는 소셜 미디어 및 커뮤니티 플랫폼\n* 실제 사용자의 핵심 불만 사항 및 개선 요구 사항\n\n## 실행 단계\n1. 연결된 'Perplexity_evaluator', 'Tavily_evaluator' 도구를 사용하여 글로벌 리뷰 사이트(Trustpilot, G2, Product Hunt) 및 한국 특화 사이트(잡플래닛, 블라인드, 클리앙, 뽐뿌 등)를 검색하세요.\n2. 한국 기업이나 제품의 경우, 국내 포털 리뷰와 IT 커뮤니티의 최근 여론을 반드시 반영하세요.\n3. 단순한 텍스트 나열이 아닌, 전체적인 평판의 흐름을 파악하여 구조화된 데이터를 반환하세요.\n\n## 주의 사항\n* 데이터를 찾을 수 없는 경우 빈 배열([]), 빈 객체({}), 또는 빈 문자열(\"\")을 반환하세요.\n* 특정 리뷰의 신뢰도가 낮거나 광고성 글로 판단될 경우 분석에서 제외하세요."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        2192,
+        2976
+      ],
+      "id": "56e71ee9-5895-478d-9a5f-fbbe7fca0b5d",
+      "name": "제품_평가_에이전트1"
+    },
+    {
+      "parameters": {
+        "query": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Query', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "@tavily/n8n-nodes-tavily.tavilyTool",
+      "typeVersion": 1,
+      "position": [
+        2336,
+        3184
+      ],
+      "id": "62554730-ff03-4e63-83c6-b2e4382ac506",
+      "name": "Tavily_evaluator1",
+      "credentials": {
+        "tavilyApi": {
+          "id": "wtKORwvpYCXrAMl2",
+          "name": "Tavily account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 2
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2688,
+        3136
+      ],
+      "id": "c74f33f4-cc0a-4e3c-8d19-258d7af20a19",
+      "name": "Wait1",
+      "webhookId": "eeeb717b-7346-44a6-a260-117890d5c38c"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        2592
+      ],
+      "id": "9757c27a-4659-4b72-a33f-a513c70b2d19",
+      "name": "Aggregate1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1440,
+        3328
+      ],
+      "id": "f86e59eb-1e9f-4295-af14-3fc5c3ed2833",
+      "name": "Google Gemini Chat Model8",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "9EP7DDryiMQXeJRS",
+          "name": "Google Gemini(PaLM) Api account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1712,
+        2832
+      ],
+      "id": "7e9b468b-d97c-430b-b127-28e527a74e9c",
+      "name": "Google Gemini Chat Model9",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "9EP7DDryiMQXeJRS",
+          "name": "Google Gemini(PaLM) Api account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=기업명 : 대모산개발단\n분석 날짜 : {{$now.format('yyyy-MM-dd')}}\n---\n{{ JSON.stringify($json.data) }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1472,
+        2640
+      ],
+      "id": "15ecfe40-734e-4bbe-8154-a820bc35edfd",
+      "name": "최종_보고서1"
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.output }}",
+        "attributes": {
+          "attributes": [
+            {
+              "name": "HTML_Content",
+              "description": "Generate a complete HTML structure including visualization elements like bar charts or progress bars using inline styles for width percentages based on the data. Use semantic tags (header, section, table) for a professional business report layout.",
+              "required": true
+            },
+            {
+              "name": "CSS_Content",
+              "description": "Provide modern, clean CSS for a professional PDF report. Include @import for 'Nanum Gothic' from Google Fonts, and define styles for typography, tables, and visualization components (e.g., bar-bg, bar-fill). Ensure high readability for A4 printing.",
+              "required": true
+            }
+          ]
+        },
+        "options": {
+          "systemPromptTemplate": "You are an expert extraction algorithm.\nOnly extract relevant information from the text.\nIf you do not know the value of an attribute asked to extract, you may omit the attribute's value.\n---\n당신은 비즈니스 리포트 데이터 추출 전문가입니다. \n당신의 임무는 입력된 텍스트에서 PDFMunk 렌더링에 필요한 HTML_Content와 CSS_Content를 정교하게 추출하는 것입니다.\n\n## 추출 지침:\n1. HTML_Content: \n   - 텍스트 본문에서 실제 시각화 구조와 데이터가 포함된 <html> 태그 내부 혹은 전체 HTML 코드를 추출하세요.\n   - 막대 그래프, 표, 텍스트 레이아웃이 포함된 완성된 구조여야 합니다.\n   \n2. CSS_Content:\n   - 보고서의 디자인을 결정하는 모든 CSS 스타일 코드를 추출하세요.\n   - 구글 폰트(@import)와 전문적인 비즈니스 스타일이 포함되어야 합니다.\n\n## 데이터 정제 규칙:\n- 마크다운 코드 블록(```html, ```css)이 포함되어 있다면, 기호는 제외하고 순수 코드 내용만 추출하세요.\n- 각 필드의 값은 PDFMunk API가 즉시 렌더링할 수 있는 완전한 형태의 문자열이어야 합니다.\n- 입력 데이터에 누락된 정보가 있더라도 구조적 틀(Layout)은 유지한 채 결과물을 생성하세요."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.2,
+      "position": [
+        1824,
+        2640
+      ],
+      "id": "9280f6c6-f303-41e3-a832-465b9ee96e3b",
+      "name": "렌더링1"
+    },
+    {
+      "parameters": {
+        "html_content": "={{ $json.output.HTML_Content }}",
+        "css_content": "={{ $json.output.CSS_Content }}"
+      },
+      "type": "n8n-nodes-htmlcsstopdf.htmlcsstopdf",
+      "typeVersion": 1,
+      "position": [
+        2176,
+        2640
+      ],
+      "id": "365e3232-1a6c-4f3a-841d-2d46662e6b1f",
+      "name": "Convert HTML to PDF1",
+      "credentials": {
+        "htmlcsstopdfApi": {
+          "id": "NaMwfetYiFokZft9",
+          "name": "HTML to PDF account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0AG8KUAL73",
+          "mode": "list",
+          "cachedResultName": "경쟁사-분석"
+        },
+        "text": "={{ $json.pdf_url }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        2384,
+        2640
+      ],
+      "id": "1cbab994-44f3-438d-971f-fe5b58a99ce1",
+      "name": "Send a message1",
+      "webhookId": "65211c5b-76b7-4195-94e4-7b721929850e",
+      "credentials": {
+        "slackApi": {
+          "id": "hfVY3nrzF9xGtRNq",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "messages": {
+          "message": [
+            {
+              "content": "당신은 기업 정보 리서치 전문가입니다. 사용자가 기업명 또는 URL을 제공하면, 최신 공개 데이터를 검색하여 아래 JSON 형식으로만 반환하세요.\n\n반환 형식:\n{\"analysis_target\":{\"name\":\"기업 공식 명칭\",\"domain\":\"공식 홈페이지 URL\",\"region\":\"KR 또는 Global\"},\"corporate_identity\":{\"year_founded\":\"YYYY\",\"legal_entity_type\":\"상장/비상장/외감 등\",\"hq_location\":\"도시, 국가\",\"founders\":[{\"name\":\"설립자명\",\"profile_url\":\"\"}],\"current_ceo\":{\"name\":\"CEO명\",\"profile_url\":\"\"}},\"financial_performance\":{\"last_funding_round\":\"Series A 등\",\"total_funding_amount\":\"금액+단위\",\"annual_revenue_latest\":\"금액+단위\",\"operating_profit_latest\":\"금액+단위\",\"valuation\":\"금액+단위\"},\"operational_metrics\":{\"employee_count\":\"숫자 또는 범위\",\"recruitment_status\":\"채용 포지션 수\",\"core_technologies\":[\"기술명\"],\"major_customers\":[\"고객사명\"]},\"market_intelligence\":{\"latest_news\":[{\"title\":\"뉴스 제목\",\"link\":\"URL\",\"date\":\"YYYY-MM-DD\"}],\"sources\":[\"출처 URL\"]}}\n\n데이터 수집 우선순위:\n- 한국 기업: dart.fss.or.kr, thevc.kr, innoforest.kr, 네이버 뉴스\n- 글로벌 기업: Crunchbase, LinkedIn, Wellfound, TechCrunch\n\n주의: 찾을 수 없는 필드는 null 대신 빈 문자열(\"\"), 빈 배열([]), 빈 객체({})로 반환. 순수 JSON만 반환하고 마크다운 코드블록(```) 사용 금지. 수치는 단위 포함 (예: \"32억 KRW\", \"$5M\").",
+              "role": "system"
+            },
+            {
+              "content": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('message1_Text', `조사할 기업명 또는 URL. 예: \"demodev.io - 기업 개요, 재무 현황, 팀 구성, 최신 뉴스 포함하여 JSON으로 반환\"`, 'string') }}"
+            }
+          ]
+        },
+        "options": {},
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.perplexityTool",
+      "typeVersion": 1,
+      "position": [
+        384,
+        1168
+      ],
+      "id": "a29a78ba-7bd1-48d9-ba1c-3fc3084e91a9",
+      "name": "Perplexity_finder",
+      "credentials": {
+        "perplexityApi": {
+          "id": "ybTHVmffV0SwCgb1",
+          "name": "Perplexity account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "messages": {
+          "message": [
+            {
+              "content": "당신은 기업 제품 및 서비스 분석 전문가입니다. 사용자가 기업 URL을 제공하면, 해당 기업의 제품 기능, 가격 정책, 기술 스택을 조사하여 아래 JSON 형식으로만 반환하세요.\n\n반환 형식:\n{\"features\":[{\"name\":\"기능명\",\"description\":\"기능 설명\"}],\"pricing_plans\":[{\"name\":\"플랜명\",\"tier\":\"Basic/Mid/High\",\"price\":\"가격+단위\",\"billing_cycle\":\"Monthly/Annually/One-time\",\"key_features\":[\"포함 기능\"]}],\"price_determinants\":[{\"factor\":\"가격 결정 요인\",\"description\":\"설명\"}],\"promotions\":{\"discounts\":\"할인 내용\",\"free_trial\":{\"available\":false,\"duration\":\"\",\"condition\":\"\"},\"freemium\":{\"available\":false,\"details\":\"\"}},\"custom_enterprise_plan\":{\"available\":false,\"contact_required\":true,\"description\":\"\"},\"complementary_tools\":[{\"name\":\"도구명\",\"description\":\"설명\"}],\"technology_stack\":[{\"name\":\"기술명\",\"purpose\":\"용도\"}],\"sources\":[\"출처 URL\"]}\n\n데이터 수집 전략:\n- 공식 웹사이트 pricing 페이지 우선\n- G2, Product Hunt, 네이버/카카오 리뷰에서 실제 가격 확인\n- 한국 기업: 원화(KRW) 기준 우선\n- 기술 스택: LinkedIn 채용공고, BuiltWith에서 추출\n\n주의: 찾을 수 없는 필드는 null 대신 빈 문자열(\"\"), 빈 배열([]), false로 반환. 순수 JSON만 반환. 가격에는 반드시 통화 단위 명시.",
+              "role": "system"
+            },
+            {
+              "content": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('message1_Text', `조사할 기업명 또는 URL. 예: \"demodev.io - 제품 기능 목록, 요금제 구조, 기술 스택 JSON으로 반환\"`, 'string') }}"
+            }
+          ]
+        },
+        "options": {},
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.perplexityTool",
+      "typeVersion": 1,
+      "position": [
+        960,
+        1136
+      ],
+      "id": "febb3cf6-c513-4e9a-8cbe-9a1712da89e2",
+      "name": "Perplexity_product",
+      "credentials": {
+        "perplexityApi": {
+          "id": "ybTHVmffV0SwCgb1",
+          "name": "Perplexity account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "messages": {
+          "message": [
+            {
+              "content": "당신은 온라인 평판 및 고객 리뷰 분석 전문가입니다. 사용자가 기업명 또는 URL을 제공하면, 다양한 플랫폼의 리뷰와 여론을 종합하여 아래 JSON 형식으로만 반환하세요.\n\n반환 형식:\n{\"review_summary\":{\"total_reviews_estimated\":0,\"average_rating\":\"4.2/5\",\"positive_sentiment_percent\":\"72%\",\"negative_sentiment_percent\":\"28%\"},\"top_pros\":[\"장점1\",\"장점2\"],\"top_cons\":[\"단점1\",\"단점2\"],\"demographics\":{\"top_countries\":[\"국가명\"],\"main_user_segments\":[\"사용자층\"]},\"active_platforms\":[\"플랫폼명\"],\"notable_feedbacks\":[{\"issue\":\"핵심 이슈\",\"sentiment\":\"Positive 또는 Negative\",\"context\":\"구체적 설명\"}],\"sources\":[\"출처 URL\"]}\n\n데이터 수집 전략:\n- 글로벌: Trustpilot, G2, Product Hunt, Glassdoor, Capterra\n- 한국: 잡플래닛, 블라인드, 클리앙, 뽐뿌, 네이버 블로그/카페\n- 소셜: Twitter/X, Reddit, LinkedIn 언급 분석\n\n주의: 찾을 수 없는 필드는 null 대신 빈 문자열(\"\"), 빈 배열([]), 0으로 반환. 순수 JSON만 반환. total_reviews_estimated는 반드시 정수(숫자)로. 광고성/스팸 리뷰 제외.",
+              "role": "system"
+            },
+            {
+              "content": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('message1_Text', `조사할 기업명 또는 URL. 예: \"demodev.io - 리뷰 요약, 장단점, 주요 사용자층, 핵심 피드백 JSON으로 반환\"`, 'string') }}"
+            }
+          ]
+        },
+        "options": {},
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.perplexityTool",
+      "typeVersion": 1,
+      "position": [
+        1568,
+        1232
+      ],
+      "id": "f7d71c73-5b3e-46f0-a143-3dc53a4edcf7",
+      "name": "Perplexity_evaluator",
+      "credentials": {
+        "perplexityApi": {
+          "id": "ybTHVmffV0SwCgb1",
+          "name": "Perplexity account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Exa.ai_경쟁사_탐색": [
+      {
+        "json": {
+          "requestId": "c6d89451fe6f82b0bdf0370aabd085d0",
+          "results": [
+            {
+              "id": "https://www.devteam.co.kr/",
+              "title": "MVP 개발 · AI 개발 · 웹 개발 · 앱 개발 전문",
+              "url": "https://www.devteam.co.kr/",
+              "author": "DevTeam Korea",
+              "score": 0.8031836152076721
+            },
+            {
+              "id": "https://devjun.net/",
+              "title": "DevJun - 데브준",
+              "url": "https://devjun.net/",
+              "publishedDate": "2025-05-27T00:00:00.000Z",
+              "author": null,
+              "score": 0.7942183613777161
+            },
+            {
+              "id": "http://www.devmon.co.kr/",
+              "title": "DEVMON",
+              "url": "http://www.devmon.co.kr/",
+              "author": null,
+              "score": 0.7889745235443115
+            },
+            {
+              "id": "https://www.devteam.co.kr/mvp",
+              "title": "MVP 개발 서비스 - 빠른 검증과 확장 전략",
+              "url": "https://www.devteam.co.kr/mvp",
+              "publishedDate": "2024-11-01T00:00:00.000Z",
+              "author": "DevTeam Korea",
+              "score": 0.7863436937332153
+            },
+            {
+              "id": "https://www.devcare.me/",
+              "title": "Hello, We are DevCare!",
+              "url": "https://www.devcare.me/",
+              "author": null,
+              "score": 0.7834814786911011
+            },
+            {
+              "id": "https://www.devmento.co.kr/",
+              "title": "",
+              "url": "https://www.devmento.co.kr/",
+              "author": null,
+              "score": 0.7826184034347534
+            },
+            {
+              "id": "http://deveapp.com/",
+              "title": "개발 완료된 프로젝트",
+              "url": "http://deveapp.com/",
+              "author": null,
+              "score": 0.7817755937576294
+            },
+            {
+              "id": "https://devon.ai.kr/",
+              "title": "IT 외주 개발, 투명한 AI 견적 – Devficial 견적 시스템",
+              "url": "https://devon.ai.kr/",
+              "author": null,
+              "score": 0.7799530029296875
+            },
+            {
+              "id": "https://devfive.kr/",
+              "title": "데브파이브",
+              "url": "https://devfive.kr/",
+              "author": null,
+              "score": 0.77903151512146
+            },
+            {
+              "id": "http://www.dev-t.io/",
+              "title": "DEV-T",
+              "url": "http://www.dev-t.io/",
+              "author": null,
+              "score": 0.7785300016403198
+            }
+          ],
+          "costDollars": {
+            "total": 0.005,
+            "search": {
+              "neural": 0.005
+            }
+          },
+          "searchTime": 302.4271050002426
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "Slack Trigger1": [
+      {
+        "json": {
+          "type": "app_mention",
+          "user": "U09B1593Z5F",
+          "ts": "1771485634.400659",
+          "client_msg_id": "ec174530-adc6-4e91-944c-45d89ab9025f",
+          "text": "<@U0AFPC3T9RN> <https://www.demodev.io/>",
+          "team": "T09B1591P7T",
+          "blocks": [
+            {
+              "type": "rich_text",
+              "block_id": "ywcth",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "user",
+                      "user_id": "U0AFPC3T9RN"
+                    },
+                    {
+                      "type": "text",
+                      "text": " "
+                    },
+                    {
+                      "type": "link",
+                      "url": "https://www.demodev.io/"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "channel": "C0AG8KUAL73",
+          "event_ts": "1771485634.400659"
+        }
+      }
+    ],
+    "Exa.ai_경쟁사_탐색1": [
+      {
+        "json": {
+          "requestId": "c6d89451fe6f82b0bdf0370aabd085d0",
+          "results": [
+            {
+              "id": "https://www.devteam.co.kr/",
+              "title": "MVP 개발 · AI 개발 · 웹 개발 · 앱 개발 전문",
+              "url": "https://www.devteam.co.kr/",
+              "author": "DevTeam Korea",
+              "score": 0.8031836152076721
+            },
+            {
+              "id": "https://devjun.net/",
+              "title": "DevJun - 데브준",
+              "url": "https://devjun.net/",
+              "publishedDate": "2025-05-27T00:00:00.000Z",
+              "author": null,
+              "score": 0.7942183613777161
+            },
+            {
+              "id": "http://www.devmon.co.kr/",
+              "title": "DEVMON",
+              "url": "http://www.devmon.co.kr/",
+              "author": null,
+              "score": 0.7889745235443115
+            },
+            {
+              "id": "https://www.devteam.co.kr/mvp",
+              "title": "MVP 개발 서비스 - 빠른 검증과 확장 전략",
+              "url": "https://www.devteam.co.kr/mvp",
+              "publishedDate": "2024-11-01T00:00:00.000Z",
+              "author": "DevTeam Korea",
+              "score": 0.7863436937332153
+            },
+            {
+              "id": "https://www.devcare.me/",
+              "title": "Hello, We are DevCare!",
+              "url": "https://www.devcare.me/",
+              "author": null,
+              "score": 0.7834814786911011
+            },
+            {
+              "id": "https://www.devmento.co.kr/",
+              "title": "",
+              "url": "https://www.devmento.co.kr/",
+              "author": null,
+              "score": 0.7826184034347534
+            },
+            {
+              "id": "http://deveapp.com/",
+              "title": "개발 완료된 프로젝트",
+              "url": "http://deveapp.com/",
+              "author": null,
+              "score": 0.7817755937576294
+            },
+            {
+              "id": "https://devon.ai.kr/",
+              "title": "IT 외주 개발, 투명한 AI 견적 – Devficial 견적 시스템",
+              "url": "https://devon.ai.kr/",
+              "author": null,
+              "score": 0.7799530029296875
+            },
+            {
+              "id": "https://devfive.kr/",
+              "title": "데브파이브",
+              "url": "https://devfive.kr/",
+              "author": null,
+              "score": 0.77903151512146
+            },
+            {
+              "id": "http://www.dev-t.io/",
+              "title": "DEV-T",
+              "url": "http://www.dev-t.io/",
+              "author": null,
+              "score": 0.7785300016403198
+            }
+          ],
+          "costDollars": {
+            "total": 0.005,
+            "search": {
+              "neural": 0.005
+            }
+          },
+          "searchTime": 302.4271050002426
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Slack Trigger": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Exa.ai_경쟁사_탐색",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Exa.ai_경쟁사_탐색": {
+      "main": [
+        [
+          {
+            "node": "경쟁사_나누기",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "경쟁사_나누기": {
+      "main": [
+        [
+          {
+            "node": "도메인_추출",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "도메인_추출": {
+      "main": [
+        [
+          {
+            "node": "중복_제거",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "중복_제거": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "URL": {
+      "main": [
+        [
+          {
+            "node": "기업_분석_에이전트",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "기업_분석_에이전트",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "기업_분석_에이전트",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "기업_분석_에이전트": {
+      "main": [
+        [
+          {
+            "node": "기업_제품_오퍼링_에이전트",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tavily_finder": {
+      "ai_tool": [
+        []
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "기업_제품_오퍼링_에이전트",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser1": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "기업_제품_오퍼링_에이전트",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tavily_product": {
+      "ai_tool": [
+        []
+      ]
+    },
+    "Google Gemini Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "제품_평가_에이전트",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser2": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "제품_평가_에이전트",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "기업_제품_오퍼링_에이전트": {
+      "main": [
+        [
+          {
+            "node": "제품_평가_에이전트",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tavily_evaluator": {
+      "ai_tool": [
+        []
+      ]
+    },
+    "제품_평가_에이전트": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Structured Output Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "최종_보고서",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model4": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "최종_보고서",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "렌더링",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "최종_보고서": {
+      "main": [
+        [
+          {
+            "node": "렌더링",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "렌더링": {
+      "main": [
+        [
+          {
+            "node": "Convert HTML to PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert HTML to PDF": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack Trigger1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Exa.ai_경쟁사_탐색1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Exa.ai_경쟁사_탐색1": {
+      "main": [
+        [
+          {
+            "node": "경쟁사_나누기1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "경쟁사_나누기1": {
+      "main": [
+        [
+          {
+            "node": "도메인_추출1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "도메인_추출1": {
+      "main": [
+        [
+          {
+            "node": "중복_제거1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "중복_제거1": {
+      "main": [
+        [
+          {
+            "node": "Limit1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items1": {
+      "main": [
+        [
+          {
+            "node": "Aggregate1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "URL1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "URL1": {
+      "main": [
+        [
+          {
+            "node": "기업_분석_에이전트1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model5": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "기업_분석_에이전트1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "기업_분석_에이전트1": {
+      "main": [
+        [
+          {
+            "node": "기업_제품_오퍼링_에이전트1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser3": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "기업_분석_에이전트1",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tavily_finder1": {
+      "ai_tool": [
+        [
+          {
+            "node": "기업_분석_에이전트1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model6": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "기업_제품_오퍼링_에이전트1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser4": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "기업_제품_오퍼링_에이전트1",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "기업_제품_오퍼링_에이전트1": {
+      "main": [
+        [
+          {
+            "node": "제품_평가_에이전트1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tavily_product1": {
+      "ai_tool": [
+        [
+          {
+            "node": "기업_제품_오퍼링_에이전트1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model7": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "제품_평가_에이전트1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser5": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "제품_평가_에이전트1",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "제품_평가_에이전트1": {
+      "main": [
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tavily_evaluator1": {
+      "ai_tool": [
+        [
+          {
+            "node": "제품_평가_에이전트1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate1": {
+      "main": [
+        [
+          {
+            "node": "최종_보고서1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model8": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Structured Output Parser3",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model9": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "최종_보고서1",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "렌더링1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "최종_보고서1": {
+      "main": [
+        [
+          {
+            "node": "렌더링1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "렌더링1": {
+      "main": [
+        [
+          {
+            "node": "Convert HTML to PDF1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert HTML to PDF1": {
+      "main": [
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Perplexity_finder": {
+      "ai_tool": [
+        [
+          {
+            "node": "기업_분석_에이전트",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Perplexity_product": {
+      "ai_tool": [
+        [
+          {
+            "node": "기업_제품_오퍼링_에이전트",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Perplexity_evaluator": {
+      "ai_tool": [
+        [
+          {
+            "node": "제품_평가_에이전트",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "9487d650-b102-4e9e-9f39-948a1adc2553",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "7032efcdaee2e571e86451519d84435919f5df5c9442d9e1609ac7565a3672f3"
+  },
+  "id": "riY0MXkpPUlrxF2S",
+  "tags": []
+}
